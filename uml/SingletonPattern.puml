@@ -1,0 +1,80 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+title 飞机大战 - 单例模式 UML 结构图\n(Singleton Pattern for Hero Aircraft)
+
+class HeroAircraft {
+    - {static} instance: HeroAircraft
+    - locationX: int
+    - locationY: int
+    - speedX: int
+    - speedY: int
+    - hp: int
+    - maxHp: int
+    - shootNum: int
+    - power: int
+    - direction: int
+    - image: BufferedImage
+    - width: int
+    - height: int
+    - isValid: boolean
+
+    - HeroAircraft(int locationX, int locationY, int speedX, int speedY, int hp)
+    + {static} getInstance(): HeroAircraft
+    + {static} getInstance(int locationX, int locationY, int speedX, int speedY, int hp): HeroAircraft
+    + forward(): void
+    + shoot(): List<BaseBullet>
+    + crash(AbstractFlyingObject flyingObject): boolean
+    + decreaseHp(int decrease): void
+    + getHp(): int
+    + getMaxHp(): int
+    + setHp(int hp): void
+    + setLocation(double locationX, double locationY): void
+    + getLocationX(): int
+    + getLocationY(): int
+    + getSpeedY(): int
+    + getImage(): BufferedImage
+    + getWidth(): int
+    + getHeight(): int
+    + notValid(): boolean
+    + vanish(): void
+}
+
+class Game {
+    - heroAircraft: HeroAircraft
+    + Game()
+    + action(): void
+}
+
+class HeroController {
+    - game: Game
+    - heroAircraft: HeroAircraft
+    + HeroController(Game game, HeroAircraft heroAircraft)
+    + mouseDragged(MouseEvent e): void
+}
+
+' 关联关系
+Game --> HeroAircraft : creates/uses
+HeroController --> HeroAircraft : controls
+
+' 自关联表示单例实例
+HeroAircraft --> HeroAircraft : instance
+
+note right of HeroAircraft::getInstance
+    懒汉式单例实现:
+    if (instance == null) {
+        instance = new HeroAircraft(
+            locationX, locationY,
+            speedX, speedY, hp);
+    }
+    return instance;
+end note
+
+note bottom of HeroAircraft
+    单例模式 (Singleton Pattern)
+    - 私有构造函数防止外部实例化
+    - 静态getInstance方法提供全局访问点
+    - 确保游戏中只有一个英雄机实例
+end note
+
+@enduml

@@ -1,0 +1,96 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+title 飞机大战 - 道具工厂模式 UML 结构图\n(Factory Pattern for Props)
+
+' 抽象产品接口
+interface AbstractProp {
+    + forward(): void
+    + crash(AbstractFlyingObject flyingObject): boolean
+    + activate(HeroAircraft heroAircraft): void
+}
+
+' 具体产品 - 加血道具
+class BloodProp {
+    - bloodAmount: int
+    + BloodProp(int locationX, int locationY, int speedX, int speedY)
+    + activate(HeroAircraft heroAircraft): void
+}
+
+' 具体产品 - 炸弹道具
+class BombProp {
+    + BombProp(int locationX, int locationY, int speedX, int speedY)
+    + activate(HeroAircraft heroAircraft): void
+}
+
+' 具体产品 - 火力道具
+class FireProp {
+    + FireProp(int locationX, int locationY, int speedX, int speedY)
+    + activate(HeroAircraft heroAircraft): void
+}
+
+' 抽象工厂接口
+interface PropFactory {
+    + createProp(int locationX, int locationY, int speedX, int speedY): AbstractProp
+}
+
+' 具体工厂 - 加血道具工厂
+class BloodPropFactory {
+    + createProp(int locationX, int locationY, int speedX, int speedY): AbstractProp
+}
+
+' 具体工厂 - 炸弹道具工厂
+class BombPropFactory {
+    + createProp(int locationX, int locationY, int speedX, int speedY): AbstractProp
+}
+
+' 具体工厂 - 火力道具工厂
+class FirePropFactory {
+    + createProp(int locationX, int locationY, int speedX, int speedY): AbstractProp
+}
+
+' 客户端
+class Game {
+    - propFactory: PropFactory
+    - props: List<AbstractProp>
+    + Game()
+    + setPropFactory(PropFactory factory): void
+    + generateProp(int x, int y): void
+    + action(): void
+}
+
+' 实现关系：具体产品实现抽象产品接口
+AbstractProp <|.. BloodProp
+AbstractProp <|.. BombProp
+AbstractProp <|.. FireProp
+
+' 实现关系：具体工厂实现抽象工厂接口
+PropFactory <|.. BloodPropFactory
+PropFactory <|.. BombPropFactory
+PropFactory <|.. FirePropFactory
+
+' 依赖关系：客户端依赖于接口
+Game ..> PropFactory : uses
+Game ..> AbstractProp : uses
+
+' 创建关系：工厂创建产品
+BloodPropFactory ..> BloodProp : <<create>>
+BombPropFactory ..> BombProp : <<create>>
+FirePropFactory ..> FireProp : <<create>>
+
+note right of PropFactory
+    工厂方法模式核心:
+    抽象工厂接口声明工厂方法，
+    具体工厂类实现该方法，
+    决定创建哪种具体道具实例
+end note
+
+note bottom of Game
+    工厂模式 (Factory Pattern)
+    - 客户端依赖于抽象接口
+    - 针对接口编程而非实现编程
+    - 支持运行时动态选择道具类型
+    - 敌机坠毁后随机调用不同工厂创建道具
+end note
+
+@enduml

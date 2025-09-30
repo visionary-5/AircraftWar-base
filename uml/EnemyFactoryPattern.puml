@@ -1,0 +1,107 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+title 飞机大战 - 敌机工厂模式 UML 结构图\n(Factory Pattern for Enemy Aircraft)
+
+' 抽象产品接口
+interface AbstractAircraft {
+    + decreaseHp(int decrease): void
+    + getHp(): int
+    + shoot(): List<BaseBullet>
+    + forward(): void
+    + crash(AbstractFlyingObject flyingObject): boolean
+}
+
+' 具体产品 - 普通敌机
+class MobEnemy {
+    + MobEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
+    + forward(): void
+    + shoot(): List<BaseBullet>
+}
+
+' 具体产品 - 精英敌机
+class EliteEnemy {
+    - shootNum: int
+    - power: int
+    - direction: int
+    - cycleTime: int
+    + EliteEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
+    + forward(): void
+    + shoot(): List<BaseBullet>
+}
+
+' 具体产品 - Boss敌机
+class BossEnemy {
+    - shootNum: int
+    - power: int
+    - direction: int
+    - moveDirection: int
+    + BossEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
+    + forward(): void
+    + shoot(): List<BaseBullet>
+}
+
+' 抽象工厂接口
+interface EnemyFactory {
+    + createEnemy(int locationX, int locationY, int speedX, int speedY, int hp): AbstractAircraft
+}
+
+' 具体工厂 - 普通敌机工厂
+class MobEnemyFactory {
+    + createEnemy(int locationX, int locationY, int speedX, int speedY, int hp): AbstractAircraft
+}
+
+' 具体工厂 - 精英敌机工厂
+class EliteEnemyFactory {
+    + createEnemy(int locationX, int locationY, int speedX, int speedY, int hp): AbstractAircraft
+}
+
+' 具体工厂 - Boss敌机工厂
+class BossEnemyFactory {
+    + createEnemy(int locationX, int locationY, int speedX, int speedY, int hp): AbstractAircraft
+}
+
+' 客户端
+class Game {
+    - enemyFactory: EnemyFactory
+    - enemyAircrafts: List<AbstractAircraft>
+    + Game()
+    + setEnemyFactory(EnemyFactory factory): void
+    + generateEnemy(): void
+    + action(): void
+}
+
+' 实现关系：具体产品实现抽象产品接口
+AbstractAircraft <|.. MobEnemy
+AbstractAircraft <|.. EliteEnemy
+AbstractAircraft <|.. BossEnemy
+
+' 实现关系：具体工厂实现抽象工厂接口
+EnemyFactory <|.. MobEnemyFactory
+EnemyFactory <|.. EliteEnemyFactory
+EnemyFactory <|.. BossEnemyFactory
+
+' 依赖关系：客户端依赖于接口
+Game ..> EnemyFactory : uses
+Game ..> AbstractAircraft : uses
+
+' 创建关系：工厂创建产品
+MobEnemyFactory ..> MobEnemy : <<create>>
+EliteEnemyFactory ..> EliteEnemy : <<create>>
+BossEnemyFactory ..> BossEnemy : <<create>>
+
+note right of EnemyFactory
+    工厂方法模式核心:
+    抽象工厂接口声明工厂方法，
+    具体工厂类实现该方法，
+    决定创建哪种具体敌机实例
+end note
+
+note bottom of Game
+    工厂模式 (Factory Pattern)
+    - 客户端依赖于抽象接口
+    - 针对接口编程而非实现编程
+    - 支持运行时动态切换敌机类型
+end note
+
+@enduml
