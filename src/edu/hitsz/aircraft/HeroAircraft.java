@@ -54,7 +54,7 @@ public class HeroAircraft extends AbstractAircraft {
     public static synchronized HeroAircraft getInstance() {
         if (instance == null) {
             // 使用默认参数创建实例
-            instance = new HeroAircraft(400, 550, 0, 0, 100);
+            instance = new HeroAircraft(400, 550, 0, 0, 1000);
         }
         return instance;
     }
@@ -115,6 +115,14 @@ public class HeroAircraft extends AbstractAircraft {
      */
     public void setHp(int hp) {
         this.hp = hp;
+    }
+
+    /**
+     * 重置单例实例（仅用于测试）
+     * 注意：此方法仅应在单元测试中使用
+     */
+    public static synchronized void resetInstance() {
+        instance = null;
     }
 
 }

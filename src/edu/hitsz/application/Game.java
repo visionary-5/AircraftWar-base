@@ -43,6 +43,8 @@ public class Game extends JPanel {
      */
     private final EnemyFactory mobEnemyFactory;
     private final EnemyFactory eliteEnemyFactory;
+    private final EnemyFactory elitePlusEnemyFactory;
+    private final EnemyFactory bossEnemyFactory;
 
     /**
      * 道具工厂
@@ -60,6 +62,32 @@ public class Game extends JPanel {
      * 当前得分
      */
     private int score = 0;
+
+    /**
+     * Boss出现的分数阈值
+     */
+    private int bossScoreThreshold = 600;
+
+    /**
+     * 上一次Boss出现时的分数
+     */
+    private int lastBossScore = 0;
+
+    /**
+     * 是否有Boss存在
+     */
+    private boolean bossExists = false;
+
+    /**
+     * 超级精英敌机生成周期计数器
+     */
+    private int elitePlusCycleCount = 0;
+
+    /**
+     * 超级精英敌机生成周期（每隔N个周期生成一次）
+     */
+    private int elitePlusCyclePeriod = 5;
+
     /**
      * 当前时刻
      */
@@ -81,7 +109,7 @@ public class Game extends JPanel {
         heroAircraft = HeroAircraft.getInstance(
                 Main.WINDOW_WIDTH / 2,
                 Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight() ,
-                0, 0, 100);
+                0, 0, 1000);
 
         enemyAircrafts = new LinkedList<>();
         heroBullets = new LinkedList<>();
@@ -91,6 +119,8 @@ public class Game extends JPanel {
         // 初始化敌机工厂
         mobEnemyFactory = new MobEnemyFactory();
         eliteEnemyFactory = new EliteEnemyFactory();
+        elitePlusEnemyFactory = new ElitePlusEnemyFactory();
+        bossEnemyFactory = new BossEnemyFactory();
 
         // 初始化道具工厂
         bloodPropFactory = new BloodPropFactory();
@@ -123,6 +153,20 @@ public class Game extends JPanel {
             // 周期性执行（控制频率）
             if (timeCountAndNewCycleJudge()) {
                 System.out.println(time);
+
+                // 检查是否需要生成Boss敌机（分数达到阈值且当前没有Boss）
+                if (score - lastBossScore >= bossScoreThreshold && !bossExists) {
+                    generateBoss();
+                }
+
+                // 超级精英敌机周期生成
+                elitePlusCycleCount++;
+                if (elitePlusCycleCount >= elitePlusCyclePeriod && Math.random() < 0.5) {
+                    // 每隔一定周期，50%概率生成超级精英敌机
+                    generateElitePlusEnemy();
+                    elitePlusCycleCount = 0;
+                }
+
                 // 新敌机产生
                 if (enemyAircrafts.size() < enemyMaxNumber) {
                     // 随机产生普通敌机或精英敌机
@@ -204,10 +248,49 @@ public class Game extends JPanel {
         }
     }
 
+    /**
+     * 生成Boss敌机
+     */
+    private void generateBoss() {
+        System.out.println("Boss出现！当前分数：" + score);
+        // Boss机悬浮于界面上方左右移动
+        int bossWidth = ImageManager.BOSS_ENEMY_IMAGE.getWidth();
+        int locationX = Main.WINDOW_WIDTH / 2;
+        int locationY = ImageManager.BOSS_ENEMY_IMAGE.getHeight();
+        int speedX = 5;  // 左右移动速度
+        int speedY = 0;  // 不向下移动，悬浮在上方
+        int hp = 250;   // Boss血量很高
+
+        enemyAircrafts.add(bossEnemyFactory.createEnemy(locationX, locationY, speedX, speedY, hp));
+        bossExists = true;
+        lastBossScore = score;
+    }
+
+    /**
+     * 生成超级精英敌机
+     */
+    private void generateElitePlusEnemy() {
+        System.out.println("超级精英敌机出现！");
+        int elitePlusWidth = ImageManager.ELITE_PLUS_ENEMY_IMAGE.getWidth();
+        int locationX = (int) (Math.random() * (Main.WINDOW_WIDTH - elitePlusWidth));
+        int locationY = (int) (Math.random() * Main.WINDOW_HEIGHT * 0.05);
+        int speedX = (int) (Math.random() * 6 - 3); // 随机左右移动速度 -3 到 3
+        int speedY = 10;
+        int hp = 80;  // 超级精英敌机血量较高
+
+        enemyAircrafts.add(elitePlusEnemyFactory.createEnemy(locationX, locationY, speedX, speedY, hp));
+    }
+
     private void shootAction() {
-        // 精英敌机射击
+        // 敌机射击
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
-            if (enemyAircraft instanceof EliteEnemy && Math.random() < 0.3) {
+            if (enemyAircraft instanceof BossEnemy && Math.random() < 0.4) {
+                // Boss敌机有40%概率射击（环射弹道）
+                enemyBullets.addAll(enemyAircraft.shoot());
+            } else if (enemyAircraft instanceof ElitePlusEnemy && Math.random() < 0.35) {
+                // 超级精英敌机有35%概率射击（散射弹道）
+                enemyBullets.addAll(enemyAircraft.shoot());
+            } else if (enemyAircraft instanceof EliteEnemy && Math.random() < 0.3) {
                 // 精英敌机有30%概率射击
                 enemyBullets.addAll(enemyAircraft.shoot());
             }
@@ -270,7 +353,20 @@ public class Game extends JPanel {
                     bullet.vanish();
                     if (enemyAircraft.notValid()) {
                         // 敌机被击毁，获得分数，产生道具补给
-                        if (enemyAircraft instanceof EliteEnemy) {
+                        if (enemyAircraft instanceof BossEnemy) {
+                            // Boss被击毁，获得大量分数
+                            score += 300;
+                            System.out.println("击毁Boss！获得1000分");
+                            bossExists = false;
+                            // Boss必定掉落3个道具
+                            generateBossProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
+                        } else if (enemyAircraft instanceof ElitePlusEnemy) {
+                            // 超级精英敌机被击毁
+                            score += 100;
+                            System.out.println("击毁超级精英敌机！获得100分");
+                            // 超级精英敌机必定掉落1个道具
+                            generateElitePlusProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
+                        } else if (enemyAircraft instanceof EliteEnemy) {
                             score += 50;
                             // 精英敌机坠毁后有概率产生道具
                             generateProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
@@ -303,14 +399,14 @@ public class Game extends JPanel {
     }
 
     /**
-     * 生成道具
+     * 生成道具（精英敌机掉落）
      */
     private void generateProp(int x, int y) {
         double random = Math.random();
         if (random < 0.1) {
             // 10%概率不产生道具
             return;
-        } else if (random < 0.7) {
+        } else if (random < 0.4) {
             // 30%概率产生加血道具
             props.add(bloodPropFactory.createProp(x, y, 0, 5));
         } else if (random < 0.7) {
@@ -320,6 +416,33 @@ public class Game extends JPanel {
             // 30%概率产生炸弹道具
             props.add(bombPropFactory.createProp(x, y, 0, 5));
         }
+    }
+
+    /**
+     * 生成道具（超级精英敌机掉落，必定掉落1个）
+     */
+    private void generateElitePlusProp(int x, int y) {
+        double random = Math.random();
+        if (random < 0.33) {
+            // 33%概率产生加血道具
+            props.add(bloodPropFactory.createProp(x, y, 0, 5));
+        } else if (random < 0.66) {
+            // 33%概率产生火力道具
+            props.add(firePropFactory.createProp(x, y, 0, 5));
+        } else {
+            // 34%概率产生炸弹道具
+            props.add(bombPropFactory.createProp(x, y, 0, 5));
+        }
+    }
+
+    /**
+     * 生成道具（Boss掉落，必定掉落3个）
+     */
+    private void generateBossProp(int x, int y) {
+        // Boss掉落3个道具
+        props.add(bloodPropFactory.createProp(x - 50, y, 0, 5));
+        props.add(firePropFactory.createProp(x, y, 0, 5));
+        props.add(bombPropFactory.createProp(x + 50, y, 0, 5));
     }
 
     /**
@@ -335,6 +458,18 @@ public class Game extends JPanel {
         heroBullets.removeIf(AbstractFlyingObject::notValid);
         enemyAircrafts.removeIf(AbstractFlyingObject::notValid);
         props.removeIf(AbstractFlyingObject::notValid);
+
+        // 检查Boss是否还存在
+        if (bossExists) {
+            boolean bossStillExists = false;
+            for (AbstractAircraft aircraft : enemyAircrafts) {
+                if (aircraft instanceof BossEnemy) {
+                    bossStillExists = true;
+                    break;
+                }
+            }
+            bossExists = bossStillExists;
+        }
     }
 
 

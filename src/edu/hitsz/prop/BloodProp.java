@@ -11,7 +11,7 @@ import edu.hitsz.application.ImageManager;
  */
 public class BloodProp extends AbstractProp {
 
-    private int bloodAmount = 20;
+    private int bloodAmount = 100;
 
     public BloodProp(int locationX, int locationY, int speedX, int speedY) {
         super(locationX, locationY, speedX, speedY);
