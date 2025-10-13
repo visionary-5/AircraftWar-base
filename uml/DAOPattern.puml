@@ -1,0 +1,56 @@
+@startuml 数据访问对象模式
+
+title 飞机大战 - 数据访问对象模式 UML 结构图
+
+' 数据传输对象 (VO/DTO)
+class ScoreRecord {
+    - rank: int
+    - playerName: String
+    - score: int
+    - recordTime: String
+    + ScoreRecord(playerName: String, score: int, recordTime: String)
+    + getRank(): int
+    + setRank(rank: int): void
+    + getPlayerName(): String
+    + getScore(): int
+    + getRecordTime(): String
+}
+
+' DAO接口
+interface ScoreDao {
+    + getAllScores(difficulty: String): List<ScoreRecord>
+    + insertScore(record: ScoreRecord, difficulty: String): void
+    + deleteScore(playerName: String, difficulty: String): void
+    + updateScore(record: ScoreRecord, difficulty: String): void
+    + getTopScores(difficulty: String, limit: int): List<ScoreRecord>
+}
+
+' DAO实现类
+class ScoreDaoImpl {
+    - records: List<ScoreRecord>
+    + ScoreDaoImpl()
+    + getAllScores(difficulty: String): List<ScoreRecord>
+    + insertScore(record: ScoreRecord, difficulty: String): void
+    + deleteScore(playerName: String, difficulty: String): void
+    + updateScore(record: ScoreRecord, difficulty: String): void
+    + getTopScores(difficulty: String, limit: int): List<ScoreRecord>
+    - loadFromFile(difficulty: String): void
+    - saveToFile(difficulty: String): void
+}
+
+' 业务对象/客户端
+class Game {
+    - scoreDao: ScoreDao
+    - currentScore: int
+    - difficulty: String
+    + Game()
+    + gameOver(): void
+}
+
+' 关系定义
+ScoreDao <|.. ScoreDaoImpl : 实现
+Game --> ScoreDao : 使用
+ScoreDaoImpl ..> ScoreRecord : 操作
+Game ..> ScoreRecord : 创建
+
+@enduml

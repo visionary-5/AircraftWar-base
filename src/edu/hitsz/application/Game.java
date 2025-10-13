@@ -4,11 +4,15 @@ import edu.hitsz.aircraft.*;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.basic.AbstractFlyingObject;
 import edu.hitsz.prop.*;
+import edu.hitsz.dao.ScoreDao;
+import edu.hitsz.dao.ScoreDaoImpl;
+import edu.hitsz.dto.ScoreRecord;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
@@ -52,6 +56,17 @@ public class Game extends JPanel {
     private final PropFactory bloodPropFactory;
     private final PropFactory firePropFactory;
     private final PropFactory bombPropFactory;
+    private final PropFactory superFirePropFactory;
+
+    /**
+     * 得分数据访问对象
+     */
+    private final ScoreDao scoreDao;
+
+    /**
+     * 游戏难度
+     */
+    private String difficulty = "EASY";
 
     /**
      * 屏幕中出现的敌机最大数量
@@ -94,8 +109,7 @@ public class Game extends JPanel {
     private int time = 0;
 
     /**
-     * 周期（ms)
-     * 指示子弹的发射、敌机的产生频率
+     * 周期（ms)，指示子弹的发射、敌机的产生频率
      */
     private int cycleDuration = 600;
     private int cycleTime = 0;
@@ -126,6 +140,10 @@ public class Game extends JPanel {
         bloodPropFactory = new BloodPropFactory();
         firePropFactory = new FirePropFactory();
         bombPropFactory = new BombPropFactory();
+        superFirePropFactory = new SuperFirePropFactory();
+
+        // 初始化得分数据访问对象
+        scoreDao = new ScoreDaoImpl();
 
         /**
          * Scheduled 线程池，用于定时任务调度
@@ -190,7 +208,7 @@ public class Game extends JPanel {
                                 (int) (Math.random() * Main.WINDOW_HEIGHT * 0.05),
                                 (int) (Math.random() * 4 - 2), // 随机左右移动速度 -2 到 2
                                 8,
-                                60
+                                80
                         ));
                     }
                 }
@@ -216,12 +234,15 @@ public class Game extends JPanel {
             //每个时刻重绘界面
             repaint();
 
-            // 游戏结束检查英雄机是否存活
-            if (heroAircraft.getHp() <= 0) {
+            // 游戏结束检查
+            if (gameOverFlag || heroAircraft.getHp() <= 0) {
                 // 游戏结束
                 executorService.shutdown();
                 gameOverFlag = true;
                 System.out.println("Game Over!");
+
+                // 处理游戏结束后的得分记录
+                gameOver();
             }
         };
 
@@ -231,6 +252,48 @@ public class Game extends JPanel {
          */
         executorService.scheduleWithFixedDelay(task, timeInterval, timeInterval, TimeUnit.MILLISECONDS);
 
+    }
+
+    /**
+     * 游戏结束处理
+     */
+    private void gameOver() {
+        // 获取玩家姓名（简化处理，使用固定用户名）
+        String playerName = "testUserName";
+
+        // 获取当前时间
+        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
+        String recordTime = sdf.format(new Date());
+
+        // 创建得分记录
+        ScoreRecord newRecord = new ScoreRecord(playerName, score, recordTime);
+
+        // 插入得分记录到数据库
+        scoreDao.insertScore(newRecord, difficulty);
+
+        // 打印得分排行榜
+        printScoreBoard();
+    }
+
+    /**
+     * 打印得分排行榜
+     */
+    private void printScoreBoard() {
+        System.out.println(score);
+        System.out.println("************************************");
+        System.out.println("           得分排行榜");
+        System.out.println("************************************");
+
+        // 获取所有得分记录
+        List<ScoreRecord> allScores = scoreDao.getAllScores(difficulty);
+
+        // 打印每条记录
+        for (ScoreRecord record : allScores) {
+            System.out.println("第" + record.getRank() + "名: " +
+                             record.getPlayerName() + "," +
+                             record.getScore() + "," +
+                             record.getRecordTime());
+        }
     }
 
     //***********************
@@ -254,12 +317,11 @@ public class Game extends JPanel {
     private void generateBoss() {
         System.out.println("Boss出现！当前分数：" + score);
         // Boss机悬浮于界面上方左右移动
-        int bossWidth = ImageManager.BOSS_ENEMY_IMAGE.getWidth();
         int locationX = Main.WINDOW_WIDTH / 2;
         int locationY = ImageManager.BOSS_ENEMY_IMAGE.getHeight();
         int speedX = 5;  // 左右移动速度
         int speedY = 0;  // 不向下移动，悬浮在上方
-        int hp = 250;   // Boss血量很高
+        int hp = 500;   // Boss血量很高
 
         enemyAircrafts.add(bossEnemyFactory.createEnemy(locationX, locationY, speedX, speedY, hp));
         bossExists = true;
@@ -276,7 +338,7 @@ public class Game extends JPanel {
         int locationY = (int) (Math.random() * Main.WINDOW_HEIGHT * 0.05);
         int speedX = (int) (Math.random() * 6 - 3); // 随机左右移动速度 -3 到 3
         int speedY = 10;
-        int hp = 80;  // 超级精英敌机血量较高
+        int hp = 120;  // 超级精英敌机血量较高
 
         enemyAircrafts.add(elitePlusEnemyFactory.createEnemy(locationX, locationY, speedX, speedY, hp));
     }
@@ -284,16 +346,17 @@ public class Game extends JPanel {
     private void shootAction() {
         // 敌机射击
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
-            if (enemyAircraft instanceof BossEnemy && Math.random() < 0.4) {
-                // Boss敌机有40%概率射击（环射弹道）
+            if (enemyAircraft instanceof BossEnemy) {
+                // Boss敌机每周期射击（100%概率）
                 enemyBullets.addAll(enemyAircraft.shoot());
-            } else if (enemyAircraft instanceof ElitePlusEnemy && Math.random() < 0.35) {
-                // 超级精英敌机有35%概率射击（散射弹道）
+            } else if (enemyAircraft instanceof ElitePlusEnemy) {
+                // 超级精英敌机每周期射击（100%概率）
                 enemyBullets.addAll(enemyAircraft.shoot());
-            } else if (enemyAircraft instanceof EliteEnemy && Math.random() < 0.3) {
-                // 精英敌机有30%概率射击
+            } else if (enemyAircraft instanceof EliteEnemy) {
+                // 精英敌机每周期射击（100%概率）
                 enemyBullets.addAll(enemyAircraft.shoot());
             }
+            // 普通敌机不射击
         }
 
         // 英雄射击
@@ -336,6 +399,11 @@ public class Game extends JPanel {
             if (heroAircraft.crash(bullet)) {
                 heroAircraft.decreaseHp(bullet.getPower());
                 bullet.vanish();
+                // 检查英雄机是否死亡
+                if (heroAircraft.getHp() <= 0) {
+                    gameOverFlag = true;
+                    return;
+                }
             }
         }
 
@@ -356,7 +424,7 @@ public class Game extends JPanel {
                         if (enemyAircraft instanceof BossEnemy) {
                             // Boss被击毁，获得大量分数
                             score += 300;
-                            System.out.println("击毁Boss！获得1000分");
+                            System.out.println("击毁Boss！获得300分");
                             bossExists = false;
                             // Boss必定掉落3个道具
                             generateBossProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
@@ -369,7 +437,7 @@ public class Game extends JPanel {
                         } else if (enemyAircraft instanceof EliteEnemy) {
                             score += 50;
                             // 精英敌机坠毁后有概率产生道具
-                            generateProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
+                            generateEliteProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
                         } else {
                             score += 10;
                         }
@@ -378,22 +446,30 @@ public class Game extends JPanel {
             }
         }
 
-        // 英雄机 与 敌机 相撞，均损毁
-        for (AbstractAircraft enemyAircraft : enemyAircrafts) {
-            if (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft)) {
-                enemyAircraft.vanish();
-                heroAircraft.decreaseHp(Integer.MAX_VALUE);
-            }
-        }
-
-        // 英雄机获得道具，道具生效
+        // 英雄机获得道具补给
         for (AbstractProp prop : props) {
             if (prop.notValid()) {
                 continue;
             }
             if (heroAircraft.crash(prop)) {
+                // 道具生效
                 prop.activate(heroAircraft);
                 prop.vanish();
+            }
+        }
+
+        // 英雄机与敌机碰撞检测 - 均损毁
+        for (AbstractAircraft enemyAircraft : enemyAircrafts) {
+            if (enemyAircraft.notValid()) {
+                continue;
+            }
+            if (enemyAircraft.crash(heroAircraft) || heroAircraft.crash(enemyAircraft)) {
+                // 英雄机与敌机相撞，均损毁，游戏结束
+                System.out.println("英雄机与敌机相撞！游戏结束！");
+                enemyAircraft.vanish();
+                heroAircraft.decreaseHp(Integer.MAX_VALUE);
+                gameOverFlag = true;
+                return;
             }
         }
     }
@@ -401,20 +477,20 @@ public class Game extends JPanel {
     /**
      * 生成道具（精英敌机掉落）
      */
-    private void generateProp(int x, int y) {
+    private void generateEliteProp(int x, int y) {
         double random = Math.random();
-        if (random < 0.1) {
-            // 10%概率不产生道具
-            return;
-        } else if (random < 0.4) {
+        if (random < 0.3) {
             // 30%概率产生加血道具
             props.add(bloodPropFactory.createProp(x, y, 0, 5));
-        } else if (random < 0.7) {
+        } else if (random < 0.6) {
             // 30%概率产生火力道具
             props.add(firePropFactory.createProp(x, y, 0, 5));
-        } else {
-            // 30%概率产生炸弹道具
+        } else if (random < 0.85) {
+            // 25%概率产生炸弹道具
             props.add(bombPropFactory.createProp(x, y, 0, 5));
+        } else {
+            // 15%概率产生超级火力道具
+            props.add(superFirePropFactory.createProp(x, y, 0, 5));
         }
     }
 
@@ -423,26 +499,29 @@ public class Game extends JPanel {
      */
     private void generateElitePlusProp(int x, int y) {
         double random = Math.random();
-        if (random < 0.33) {
-            // 33%概率产生加血道具
+        if (random < 0.25) {
+            // 25%概率产生加血道具
             props.add(bloodPropFactory.createProp(x, y, 0, 5));
-        } else if (random < 0.66) {
-            // 33%概率产生火力道具
+        } else if (random < 0.5) {
+            // 25%概率产生火力道具
             props.add(firePropFactory.createProp(x, y, 0, 5));
-        } else {
-            // 34%概率产生炸弹道具
+        } else if (random < 0.75) {
+            // 25%概率产生炸弹道具
             props.add(bombPropFactory.createProp(x, y, 0, 5));
+        } else {
+            // 25%概率产生超级火力道具
+            props.add(superFirePropFactory.createProp(x, y, 0, 5));
         }
     }
 
     /**
-     * 生成道具（Boss掉落，必定掉落3个）
+     * 生成道具（Boss掉落，必定掉落3个道具，包含超级火力道具）
      */
     private void generateBossProp(int x, int y) {
-        // Boss掉落3个道具
+        // Boss掉落3个道具：加血、炸弹、超级火力
         props.add(bloodPropFactory.createProp(x - 50, y, 0, 5));
-        props.add(firePropFactory.createProp(x, y, 0, 5));
-        props.add(bombPropFactory.createProp(x + 50, y, 0, 5));
+        props.add(bombPropFactory.createProp(x, y, 0, 5));
+        props.add(superFirePropFactory.createProp(x + 50, y, 0, 5));
     }
 
     /**
@@ -481,7 +560,7 @@ public class Game extends JPanel {
      * 重写paint方法
      * 通过重复调用paint方法，实现游戏动画
      *
-     * @param  g
+     * @param  g 绘图对象
      */
     @Override
     public void paint(Graphics g) {
@@ -514,7 +593,7 @@ public class Game extends JPanel {
     }
 
     private void paintImageWithPositionRevised(Graphics g, List<? extends AbstractFlyingObject> objects) {
-        if (objects.size() == 0) {
+        if (objects.isEmpty()) {
             return;
         }
 

@@ -1,0 +1,113 @@
+@startuml 射击策略模式
+
+title 飞机大战 - 射击策略模式 UML 结构图
+
+' ============ 策略接口（抽象策略角色） ============
+interface ShootStrategy {
+    + shoot(aircraft: AbstractAircraft): List<BaseBullet>
+}
+
+' ============ 具体策略类 ============
+class NoShootStrategy {
+    + shoot(aircraft: AbstractAircraft): List<BaseBullet>
+}
+
+class StraightShootStrategy {
+    - shootNum: int
+    - power: int
+    - direction: int
+    + shoot(aircraft: AbstractAircraft): List<BaseBullet>
+}
+
+class ScatterShootStrategy {
+    - shootNum: int
+    - power: int
+    - direction: int
+    - scatterAngle: int
+    + shoot(aircraft: AbstractAircraft): List<BaseBullet>
+}
+
+class CircleShootStrategy {
+    - shootNum: int
+    - power: int
+    + shoot(aircraft: AbstractAircraft): List<BaseBullet>
+}
+
+' ============ 上下文类 ============
+class AbstractAircraft {
+    # locationX: int
+    # locationY: int
+    # speedX: int
+    # speedY: int
+    # hp: int
+    # shootStrategy: ShootStrategy
+    + setShootStrategy(strategy: ShootStrategy): void
+    + shoot(): List<BaseBullet>
+    + forward(): void
+    + decreaseHp(decrease: int): void
+}
+
+' ============ 客户端类 ============
+class Game {
+    - heroAircraft: HeroAircraft
+    - enemyAircrafts: List<AbstractAircraft>
+    + createEnemy(): void
+    + activateProp(prop: AbstractProp): void
+}
+
+' ============ 辅助类 ============
+class HeroAircraft {
+    - instance: HeroAircraft
+    - HeroAircraft()
+    + getInstance(): HeroAircraft
+}
+
+class MobEnemy {
+    + MobEnemy(...)
+}
+
+class EliteEnemy {
+    + EliteEnemy(...)
+}
+
+class ElitePlusEnemy {
+    + ElitePlusEnemy(...)
+}
+
+class BossEnemy {
+    + BossEnemy(...)
+}
+
+class FireProp {
+    + activate(hero: HeroAircraft): void
+}
+
+class SuperFireProp {
+    + activate(hero: HeroAircraft): void
+}
+
+' ============ 继承关系 ============
+ShootStrategy <|.. NoShootStrategy
+ShootStrategy <|.. StraightShootStrategy
+ShootStrategy <|.. ScatterShootStrategy
+ShootStrategy <|.. CircleShootStrategy
+
+AbstractAircraft <|-- HeroAircraft
+AbstractAircraft <|-- MobEnemy
+AbstractAircraft <|-- EliteEnemy
+AbstractAircraft <|-- BossEnemy
+EliteEnemy <|-- ElitePlusEnemy
+
+' ============ 关联关系 ============
+AbstractAircraft o--> ShootStrategy
+
+' ============ 依赖关系 ============
+Game ..> AbstractAircraft
+Game ..> FireProp
+Game ..> SuperFireProp
+FireProp ..> HeroAircraft
+SuperFireProp ..> HeroAircraft
+FireProp ..> ScatterShootStrategy
+SuperFireProp ..> CircleShootStrategy
+
+@enduml
