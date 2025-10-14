@@ -35,6 +35,9 @@ public class ImageManager {
     private static final Map<String, BufferedImage> CLASSNAME_IMAGE_MAP = new HashMap<>();
 
     public static BufferedImage BACKGROUND_IMAGE;
+    public static BufferedImage BACKGROUND_IMAGE_EASY;
+    public static BufferedImage BACKGROUND_IMAGE_NORMAL;
+    public static BufferedImage BACKGROUND_IMAGE_HARD;
     public static BufferedImage HERO_IMAGE;
     public static BufferedImage HERO_BULLET_IMAGE;
     public static BufferedImage ENEMY_BULLET_IMAGE;
@@ -51,6 +54,9 @@ public class ImageManager {
         try {
 
             BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
+            BACKGROUND_IMAGE_EASY = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
+            BACKGROUND_IMAGE_NORMAL = ImageIO.read(new FileInputStream("src/images/bg2.jpg"));
+            BACKGROUND_IMAGE_HARD = ImageIO.read(new FileInputStream("src/images/bg3.jpg"));
 
             HERO_IMAGE = ImageIO.read(new FileInputStream("src/images/hero.png"));
             MOB_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/mob.png"));
@@ -91,6 +97,32 @@ public class ImageManager {
             return null;
         }
         return get(obj.getClass().getName());
+    }
+
+    /**
+     * 根据难度获取对应的背景图
+     * @param difficulty 难度：EASY, NORMAL, HARD
+     * @return 对应难度的背景图
+     */
+    public static BufferedImage getBackgroundImage(String difficulty) {
+        switch (difficulty) {
+            case "EASY":
+                return BACKGROUND_IMAGE_EASY;
+            case "NORMAL":
+                return BACKGROUND_IMAGE_NORMAL;
+            case "HARD":
+                return BACKGROUND_IMAGE_HARD;
+            default:
+                return BACKGROUND_IMAGE;
+        }
+    }
+
+    /**
+     * 设置当前使用的背景图
+     * @param difficulty 难度：EASY, NORMAL, HARD
+     */
+    public static void setBackgroundImage(String difficulty) {
+        BACKGROUND_IMAGE = getBackgroundImage(difficulty);
     }
 
 }

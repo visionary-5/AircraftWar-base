@@ -47,8 +47,31 @@ public class ScoreDaoImpl implements ScoreDao {
 
     @Override
     public void deleteScore(String playerName, String difficulty) {
+        // 此方法保留用于兼容，删除该玩家的所有记录
         loadFromFile(difficulty);
         records.removeIf(record -> record.getPlayerName().equals(playerName));
+        // 重新设置排名
+        records.sort(Comparator.comparingInt(ScoreRecord::getScore).reversed());
+        for (int i = 0; i < records.size(); i++) {
+            records.get(i).setRank(i + 1);
+        }
+        saveToFile(difficulty);
+    }
+
+    /**
+     * 删除指定的得分记录（精确匹配）
+     * @param playerName 玩家名称
+     * @param score 分数
+     * @param recordTime 记录时间
+     * @param difficulty 游戏难度
+     */
+    public void deleteScoreByDetails(String playerName, int score, String recordTime, String difficulty) {
+        loadFromFile(difficulty);
+        // 通过玩家名、分数和时间三个字段精确匹配，只删除选中的那一条记录
+        records.removeIf(record ->
+            record.getPlayerName().equals(playerName) &&
+            record.getScore() == score &&
+            record.getRecordTime().equals(recordTime));
         // 重新设置排名
         records.sort(Comparator.comparingInt(ScoreRecord::getScore).reversed());
         for (int i = 0; i < records.size(); i++) {
@@ -136,4 +159,3 @@ public class ScoreDaoImpl implements ScoreDao {
         }
     }
 }
-

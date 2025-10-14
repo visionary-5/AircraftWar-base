@@ -118,8 +118,25 @@ public class Game extends JPanel {
      * 游戏结束标志
      */
     private boolean gameOverFlag = false;
+    /**
+     * 音效是否开启
+     */
+    private boolean soundEnabled = true;
+    /**
+     * 背景音乐线程
+     */
+    private MusicThread bgmThread;
+    /**
+     * Boss背景音乐线程
+     */
+    private MusicThread bossBgmThread;
 
-    public Game() {
+    public Game(String difficulty, boolean soundEnabled) {
+        this.difficulty = difficulty;
+        this.soundEnabled = soundEnabled;
+        // 根据难度设置背景图
+        ImageManager.setBackgroundImage(difficulty);
+        
         heroAircraft = HeroAircraft.getInstance(
                 Main.WINDOW_WIDTH / 2,
                 Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight() ,
@@ -155,6 +172,11 @@ public class Game extends JPanel {
 
         //启动英雄机鼠标监听
         new HeroController(this, heroAircraft);
+        // 如果音效开启，播放背景音乐
+        if (soundEnabled) {
+            bgmThread = new MusicThread("src/videos/bgm.wav", true);
+            bgmThread.start();
+        }
 
     }
 
@@ -258,21 +280,24 @@ public class Game extends JPanel {
      * 游戏结束处理
      */
     private void gameOver() {
-        // 获取玩家姓名（简化处理，使用固定用户名）
-        String playerName = "testUserName";
-
-        // 获取当前时间
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm");
-        String recordTime = sdf.format(new Date());
-
-        // 创建得分记录
-        ScoreRecord newRecord = new ScoreRecord(playerName, score, recordTime);
-
-        // 插入得分记录到数据库
-        scoreDao.insertScore(newRecord, difficulty);
-
-        // 打印得分排行榜
-        printScoreBoard();
+        // 停止背景音乐和Boss音乐
+        if (bgmThread != null) {
+            bgmThread.stopMusic();
+        }
+        if (bossBgmThread != null) {
+            bossBgmThread.stopMusic();
+        }
+        // 如果音效开启，播放游戏结束音效
+        if (soundEnabled) {
+            new MusicThread("src/videos/game_over.wav").start();
+        }
+        // 显示排行榜界面
+        SwingUtilities.invokeLater(() -> {
+            Scoreboard scoreboard = new Scoreboard(difficulty);
+            scoreboard.setVisible(true);
+            // 添加当前得分
+            scoreboard.addScore(score);
+        });
     }
 
     /**
@@ -316,6 +341,14 @@ public class Game extends JPanel {
      */
     private void generateBoss() {
         System.out.println("Boss出现！当前分数：" + score);
+        // Boss 出场，停止普通背景音乐，播放 Boss 背景音乐
+        if (soundEnabled) {
+            if (bgmThread != null) {
+                bgmThread.stopMusic();
+            }
+            bossBgmThread = new MusicThread("src/videos/bgm_boss.wav", true);
+            bossBgmThread.start();
+        }
         // Boss机悬浮于界面上方左右移动
         int locationX = Main.WINDOW_WIDTH / 2;
         int locationY = ImageManager.BOSS_ENEMY_IMAGE.getHeight();
@@ -420,12 +453,24 @@ public class Game extends JPanel {
                     enemyAircraft.decreaseHp(bullet.getPower());
                     bullet.vanish();
                     if (enemyAircraft.notValid()) {
+                        // 播放子弹击中音效
+                        if (soundEnabled) {
+                            new MusicThread("src/videos/bullet_hit.wav").start();
+                        }
                         // 敌机被击毁，获得分数，产生道具补给
                         if (enemyAircraft instanceof BossEnemy) {
                             // Boss被击毁，获得大量分数
                             score += 300;
                             System.out.println("击毁Boss！获得300分");
                             bossExists = false;
+                            // Boss被击毁，停止Boss音乐，恢复普通背景音乐
+                            if (soundEnabled) {
+                                if (bossBgmThread != null) {
+                                    bossBgmThread.stopMusic();
+                                }
+                                bgmThread = new MusicThread("src/videos/bgm.wav", true);
+                                bgmThread.start();
+                            }
                             // Boss必定掉落3个道具
                             generateBossProp(enemyAircraft.getLocationX(), enemyAircraft.getLocationY());
                         } else if (enemyAircraft instanceof ElitePlusEnemy) {
@@ -452,6 +497,10 @@ public class Game extends JPanel {
                 continue;
             }
             if (heroAircraft.crash(prop)) {
+                // 道具生效音效
+                if (soundEnabled) {
+                    new MusicThread("src/videos/get_supply.wav").start();
+                }
                 // 道具生效
                 prop.activate(heroAircraft);
                 prop.vanish();
@@ -617,3 +666,5 @@ public class Game extends JPanel {
 
 
 }
+
+
