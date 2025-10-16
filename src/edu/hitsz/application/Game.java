@@ -354,7 +354,7 @@ public class Game extends JPanel {
         int locationY = ImageManager.BOSS_ENEMY_IMAGE.getHeight();
         int speedX = 5;  // 左右移动速度
         int speedY = 0;  // 不向下移动，悬浮在上方
-        int hp = 500;   // Boss血量很高
+        int hp = 400;   // Boss血量很高
 
         enemyAircrafts.add(bossEnemyFactory.createEnemy(locationX, locationY, speedX, speedY, hp));
         bossExists = true;
