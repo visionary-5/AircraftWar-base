@@ -1,0 +1,97 @@
+@startuml TemplatePattern
+
+title 模板模式 - 游戏难度设计
+
+abstract class AbstractGame {
+    # difficulty: String
+    # soundEnabled: boolean
+    # heroAircraft: HeroAircraft
+    # enemyAircrafts: List<AbstractAircraft>
+    # heroBullets: List<BaseBullet>
+    # enemyBullets: List<BaseBullet>
+    # props: List<AbstractProp>
+    # score: int
+    # time: int
+    # gameOverFlag: boolean
+    # bossExists: boolean
+    # lastBossScore: int
+    # enemyMaxNumber: int
+    # cycleDuration: int
+    # heroShootPeriod: int
+    # eliteProbability: double
+    # bossScoreThreshold: int
+    # initialBossHp: int
+    # mobEnemyHp: int
+    # eliteEnemyHp: int
+    # mobEnemySpeed: int
+    # eliteEnemySpeed: int
+
+    + action(): void
+    # timeCountAndNewCycleJudge(): boolean
+    # shootAction(): void
+    # bulletsMoveAction(): void
+    # aircraftsMoveAction(): void
+    # propsMoveAction(): void
+    # crashCheckAction(): void
+    # postProcessAction(): void
+    # gameOver(): void
+    # {abstract} initGameParameters(): void
+    # {abstract} generateEnemy(): void
+    # {abstract} generateBoss(): void
+    # {abstract} shouldIncreaseDifficulty(): boolean
+    # {abstract} increaseDifficulty(): void
+    # {abstract} getBossHp(): int
+}
+
+class EasyGame {
+    - bossAppearCount: int
+
+    # initGameParameters(): void
+    # generateEnemy(): void
+    # generateBoss(): void
+    # shouldIncreaseDifficulty(): boolean
+    # increaseDifficulty(): void
+    # getBossHp(): int
+}
+
+class NormalGame {
+    - difficultyIncreaseInterval: int
+    - lastDifficultyIncreaseTime: int
+    - bossAppearCount: int
+
+    # initGameParameters(): void
+    # generateEnemy(): void
+    # generateBoss(): void
+    # shouldIncreaseDifficulty(): boolean
+    # increaseDifficulty(): void
+    # getBossHp(): int
+}
+
+class HardGame {
+    - difficultyIncreaseInterval: int
+    - lastDifficultyIncreaseTime: int
+    - bossAppearCount: int
+    - bossHpIncrement: int
+
+    # initGameParameters(): void
+    # generateEnemy(): void
+    # generateBoss(): void
+    # shouldIncreaseDifficulty(): boolean
+    # increaseDifficulty(): void
+    # getBossHp(): int
+}
+
+class Menu {
+    - difficultyComboBox: JComboBox
+    - soundCheckBox: JCheckBox
+
+    + startGame(): void
+}
+
+AbstractGame <|-- EasyGame
+AbstractGame <|-- NormalGame
+AbstractGame <|-- HardGame
+
+Menu ..> AbstractGame : <<create>>
+
+@enduml

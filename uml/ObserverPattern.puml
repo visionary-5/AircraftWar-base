@@ -1,0 +1,90 @@
+@startuml ObserverPattern
+'https://plantuml.com/class-diagram
+
+title 观察者模式 - 炸弹道具效果实现
+
+' 观察者接口
+interface Observer {
+    + update(): void
+}
+
+' 炸弹道具类（观察目标）
+class BombProp {
+    - observers: List<Observer>
+    - locationX: int
+    - locationY: int
+    - speedX: int
+    - speedY: int
+
+    + registerObserver(o: Observer): void
+    + removeObserver(o: Observer): void
+    + notifyObservers(): void
+    + activate(): void
+}
+
+' 具体观察者：普通敌机
+class MobEnemy {
+    - hp: int
+    - score: int
+
+    + update(): void
+    + vanish(): void
+    + getScore(): int
+}
+
+' 具体观察者：精英敌机
+class EliteEnemy {
+    - hp: int
+    - score: int
+
+    + update(): void
+    + vanish(): void
+    + getScore(): int
+}
+
+' 具体观察者：超级精英敌机
+class ElitePlusEnemy {
+    - hp: int
+    - score: int
+    - damage: int
+
+    + update(): void
+    + decreaseHp(decrease: int): void
+    + getScore(): int
+}
+
+' 具体观察者：Boss敌机
+class BossEnemy {
+    - hp: int
+    - score: int
+
+    + update(): void
+}
+
+' 具体观察者：敌机子弹
+class EnemyBullet {
+    - power: int
+
+    + update(): void
+    + vanish(): void
+}
+
+' 客户端：游戏主逻辑
+class Game {
+    + run(): void
+    + action(): void
+}
+
+' 实现关系
+Observer <|.. MobEnemy
+Observer <|.. EliteEnemy
+Observer <|.. ElitePlusEnemy
+Observer <|.. BossEnemy
+Observer <|.. EnemyBullet
+
+' 关联关系
+BombProp o--> Observer
+Game ..> BombProp
+Game ..> Observer
+
+@enduml

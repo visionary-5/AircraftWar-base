@@ -49,8 +49,23 @@ public class Menu extends JFrame {
         gameFrame.setLocationRelativeTo(null);
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // 创建游戏实例
-        Game game = new Game(difficulty, soundEnabled);
+        // 根据难度创建不同的游戏实例（模板模式应用）
+        AbstractGame game;
+        switch (difficulty) {
+            case "EASY":
+                game = new EasyGame(difficulty, soundEnabled);
+                break;
+            case "NORMAL":
+                game = new NormalGame(difficulty, soundEnabled);
+                break;
+            case "HARD":
+                game = new HardGame(difficulty, soundEnabled);
+                break;
+            default:
+                game = new NormalGame(difficulty, soundEnabled);
+                break;
+        }
+
         gameFrame.add(game);
         gameFrame.setVisible(true);
 

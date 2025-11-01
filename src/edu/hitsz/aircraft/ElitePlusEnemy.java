@@ -11,9 +11,18 @@ import edu.hitsz.shoot.ScatterShootStrategy;
  */
 public class ElitePlusEnemy extends EliteEnemy {
 
+    private int damage = 30;
+
     public ElitePlusEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
         // 初始化为散射策略：3颗子弹，威力20，向下发射（direction=1），散射角度30度
         this.shootStrategy = new ScatterShootStrategy(3, 20, 1, 30);
+        this.setScore(50);
+    }
+
+    @Override
+    public void update() {
+        // 炸弹爆炸时，超级精英敌机血量减少
+        decreaseHp(damage);
     }
 }

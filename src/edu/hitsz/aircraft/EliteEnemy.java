@@ -2,6 +2,7 @@ package edu.hitsz.aircraft;
 
 import edu.hitsz.application.Main;
 import edu.hitsz.shoot.StraightShootStrategy;
+import edu.hitsz.observer.Observer;
 
 /**
  * 精英敌机
@@ -9,7 +10,9 @@ import edu.hitsz.shoot.StraightShootStrategy;
  *
  * @author hitsz
  */
-public class EliteEnemy extends AbstractAircraft {
+public class EliteEnemy extends AbstractAircraft implements Observer {
+
+    private int score = 30;
 
     public EliteEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         super(locationX, locationY, speedX, speedY, hp);
@@ -25,5 +28,19 @@ public class EliteEnemy extends AbstractAircraft {
         if (locationY >= Main.WINDOW_HEIGHT) {
             vanish();
         }
+    }
+
+    @Override
+    public void update() {
+        // 炸弹爆炸时，精英敌机直接消失
+        vanish();
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }

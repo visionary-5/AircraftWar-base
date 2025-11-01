@@ -2,6 +2,7 @@ package edu.hitsz.application;
 
 import edu.hitsz.aircraft.HeroAircraft;
 
+import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -12,11 +13,11 @@ import java.awt.event.MouseEvent;
  * @author hitsz
  */
 public class HeroController {
-    private Game game;
+    private JPanel game;
     private HeroAircraft heroAircraft;
     private MouseAdapter mouseAdapter;
 
-    public HeroController(Game game, HeroAircraft heroAircraft){
+    public HeroController(JPanel game, HeroAircraft heroAircraft){
         this.game = game;
         this.heroAircraft = heroAircraft;
 
@@ -37,6 +38,4 @@ public class HeroController {
         game.addMouseListener(mouseAdapter);
         game.addMouseMotionListener(mouseAdapter);
     }
-
-
 }
