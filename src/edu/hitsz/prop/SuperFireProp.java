@@ -6,7 +6,7 @@ import edu.hitsz.shoot.StraightShootStrategy;
 
 /**
  * 超级火力道具类
- * 大幅提升英雄机火力，弹道由直射切换为环射
+ * 大幅提升英雄机火力，弹道由直射切换为环射，持续3秒后恢复直射
  *
  * @author hitsz
  */
